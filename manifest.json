@@ -1,0 +1,93 @@
+{
+  "id": "aruba_cx",
+  "name": "Aruba CX",
+  "name_en": "HPE Aruba CX",
+  "version": "1.0.0",
+  "description": "Consulta de switches HPE Aruba CX (AOS-CX REST API): información del switch, interfaces, VLANs y estado de puertos. Solo lectura",
+  "description_en": "Read-only queries to HPE Aruba CX switches (AOS-CX REST API): switch information, interfaces, VLANs and port status",
+  "icon": "icon.svg",
+  "category": "networking",
+  "category_en": "networking",
+  "keywords": [
+    "aruba",
+    "aruba cx",
+    "aos-cx",
+    "switch",
+    "interfaces",
+    "vlan",
+    "puertos",
+    "ports",
+    "red",
+    "networking"
+  ],
+  "library": {
+    "package": "ruvic-aruba-cx-connector",
+    "install": "pip install git+https://github.com/RuvicDev/CON-091-Aruba-CX.git#subdirectory=lib",
+    "import_name": "ruvic_aruba_cx_connector"
+  },
+  "auth_modes": [
+    {
+      "id": "user_password",
+      "label": "Usuario y contraseña",
+      "fields": [
+        {
+          "key": "host",
+          "label": "URL del switch",
+          "type": "text",
+          "required": true,
+          "placeholder": "https://10.0.0.10",
+          "help_text": "Dirección HTTPS del switch (la API REST debe estar habilitada)"
+        },
+        {
+          "key": "username",
+          "label": "Usuario",
+          "type": "text",
+          "required": true,
+          "placeholder": "ruvic-api"
+        },
+        {
+          "key": "password",
+          "label": "Contraseña",
+          "type": "password",
+          "secret": true,
+          "required": true
+        },
+        {
+          "key": "api_version",
+          "label": "Versión de la API REST",
+          "type": "text",
+          "required": false,
+          "default": "v10.09",
+          "help_text": "Versión de la API del firmware (ej. v10.09, v10.13). Consulta https://<switch>/rest para ver las disponibles"
+        },
+        {
+          "key": "verify_ssl",
+          "label": "Verificar certificado SSL",
+          "type": "boolean",
+          "required": false,
+          "default": "true",
+          "help_text": "Desactívalo solo si el equipo usa un certificado autofirmado en una red de confianza"
+        },
+        {
+          "key": "connect_timeout",
+          "label": "Timeout de conexión (segundos)",
+          "type": "number",
+          "required": false,
+          "default": "15"
+        }
+      ]
+    }
+  ],
+  "env_prefix": "RUVIC_ARUBA_CX_",
+  "operations": [
+    "switch.info",
+    "interfaces.list",
+    "vlans.list",
+    "ports.status"
+  ],
+  "test_connection": true,
+  "docs": {
+    "skill": "SKILL.md",
+    "permissions_note": "Crea un usuario local con el grupo 'operators' (solo lectura) y habilita la API REST: 'https-server rest access-mode read-only' y 'https-server vrf <vrf>'. El conector no cambia la configuración del switch. AOS-CX limita a 6 sesiones REST simultáneas por usuario: el conector cierra su sesión en cada operación."
+  }
+}

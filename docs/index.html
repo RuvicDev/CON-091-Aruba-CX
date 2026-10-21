@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title data-i18n="doc_title">Conector Aruba CX — Guía de configuración | Ruvic</title>
+  <link rel="stylesheet" href="assets/ruvic.css">
+</head>
+<body class="guide">
+<div class="guide-shell">
+<main class="ruvic-container">
+  <nav class="ruvic-toc" aria-label="Índice">
+    <h2 data-i18n="toc_title">Contenido</h2>
+    <ol>
+      <li><a href="#que-es" data-i18n="toc.que_es">¿Qué es y para qué sirve?</a></li>
+      <li><a href="#prerrequisitos" data-i18n="toc.prerrequisitos">Prerrequisitos</a></li>
+      <li><a href="#configuracion-fabricante" data-i18n="toc.configuracion_fabricante">Configuración en el fabricante</a></li>
+      <li><a href="#permisos" data-i18n="toc.permisos">Permisos requeridos</a></li>
+      <li><a href="#configuracion-ruvic" data-i18n="toc.configuracion_ruvic">Configuración en Ruvic</a></li>
+      <li><a href="#verificacion" data-i18n="toc.verificacion">Verificación</a></li>
+      <li><a href="#solucion-problemas" data-i18n="toc.solucion_problemas">Solución de problemas</a></li>
+      <li><a href="#faq-seguridad" data-i18n="toc.faq_seguridad">Preguntas frecuentes y notas de seguridad</a></li>
+    </ol>
+  </nav>
+
+  <h1 data-i18n="guide_title">Conector Aruba CX — Guía de configuración</h1>
+  <p class="guide-updated" data-i18n="guide_updated">Última actualización: octubre 2026</p>
+
+  <section id="que-es">
+    <h2 data-i18n="section.que_es">¿Qué es y para qué sirve?</h2>
+    <p data-i18n="que_es.body">El conector Aruba CX permite que el agente de Ruvic consulte switches HPE Aruba CX: información general, interfaces, VLANs y el estado de un puerto. Es de solo lectura. Puedes pedirle cosas como:</p>
+    <ul>
+      <li data-i18n="que_es.example1">"¿Qué puertos del switch core están caídos?"</li>
+      <li data-i18n="que_es.example2">"¿En qué VLAN está el puerto 1/1/24 y tiene errores?"</li>
+      <li data-i18n="que_es.example3">"¿Qué versión de firmware tiene el switch?"</li>
+    </ul>
+    <p data-i18n="que_es.ops_intro">Operaciones soportadas:</p>
+    <table>
+      <thead><tr><th data-i18n="table.operacion">Operación</th><th data-i18n="table.que_hace">Qué hace</th></tr></thead>
+      <tbody>
+        <tr><td><code>switch.info</code></td><td data-i18n="op.1">Hostname, plataforma, firmware y número de serie</td></tr>
+        <tr><td><code>interfaces.list</code></td><td data-i18n="op.2">Interfaces con estado administrativo, de enlace y velocidad</td></tr>
+        <tr><td><code>vlans.list</code></td><td data-i18n="op.3">VLANs configuradas</td></tr>
+        <tr><td><code>ports.status</code></td><td data-i18n="op.4">Estado detallado y contadores de un puerto</td></tr>
+      </tbody>
+    </table>
+    <div class="callout callout-warning">
+      <span class="callout-title" data-i18n="callout.main.title">Solo lectura</span>
+      <span data-i18n="callout.main.body">El conector no cambia la configuración del switch. Usa un usuario del grupo operators.</span>
+    </div>
+  </section>
+
+  <section id="prerrequisitos">
+    <h2 data-i18n="section.prerrequisitos">Prerrequisitos</h2>
+    <ul>
+      <li data-i18n="prereq.1">Switch HPE Aruba CX con AOS-CX 10.04 o superior y la API REST habilitada.</li>
+      <li data-i18n="prereq.2">Acceso de administrador al switch para crear el usuario de solo lectura.</li>
+      <li data-i18n="prereq.3">Conectividad HTTPS desde la plataforma Ruvic hasta la IP de gestión del switch.</li>
+    </ul>
+  </section>
+
+  <section id="configuracion-fabricante">
+    <h2 data-i18n="section.configuracion_fabricante">Configuración en el fabricante</h2>
+    <p data-i18n="fabricante.intro">Vas a crear un usuario de solo lectura y habilitar la API REST en modo lectura.</p>
+    <ol class="ruvic-steps">
+      <li>
+        <strong data-i18n="step.1.label">Crea el usuario de solo lectura.</strong>
+        <p data-i18n="step.1.body">En la CLI del switch: <code>user ruvic-api group operators password plaintext &lt;contraseña&gt;</code>.</p>
+      </li>
+      <li>
+        <strong data-i18n="step.2.label">Habilita la API REST.</strong>
+        <p data-i18n="step.2.body">Ejecuta <code>https-server rest access-mode read-only</code> y <code>https-server vrf mgmt</code> (o el VRF de tu red de gestión).</p>
+        <div class="screenshot-placeholder" data-i18n="img.step2.placeholder">[ Captura: configuración https-server en la CLI — reemplazar por assets/img/arubacx-rest.png ]</div>
+      </li>
+      <li>
+        <strong data-i18n="step.3.label">Comprueba la versión de la API.</strong>
+        <p data-i18n="step.3.body">Abre <code>https://&lt;switch&gt;/rest</code> en el navegador y anota la versión más reciente (ej. <code>v10.13</code>).</p>
+      </li>
+    </ol>
+  </section>
+
+  <section id="permisos">
+    <h2 data-i18n="section.permisos">Permisos requeridos</h2>
+    <p data-i18n="permisos.intro">El grupo operators es suficiente: el conector solo lee.</p>
+    <table>
+      <thead><tr><th data-i18n="table.permiso">Permiso</th><th data-i18n="table.para_que">Para qué lo usa el conector</th></tr></thead>
+      <tbody>
+        <tr><td><code>group operators</code></td><td data-i18n="perm.1.desc">Leer sistema, interfaces y VLANs</td></tr>
+        <tr><td><code>https-server rest access-mode read-only</code></td><td data-i18n="perm.2.desc">Permitir la API REST sin escritura</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section id="configuracion-ruvic">
+    <h2 data-i18n="section.configuracion_ruvic">Configuración en Ruvic</h2>
+    <p data-i18n="ruvic.intro">Entra a <strong>Settings → Conectores</strong>, busca la tarjeta <strong>Aruba CX</strong> y pulsa <strong>Configurar</strong>. Diligencia el formulario con los valores de la sección anterior:</p>
+    <table>
+      <thead><tr><th data-i18n="table.campo">Campo del formulario</th><th data-i18n="table.valor">Valor</th></tr></thead>
+      <tbody>
+        <tr><td data-i18n="field.host">URL del switch</td><td data-i18n="field.host.desc">URL HTTPS de gestión del switch, ej. <code>https://10.0.0.10</code></td></tr>
+        <tr><td data-i18n="field.username">Usuario</td><td data-i18n="field.username.desc">Usuario del grupo operators</td></tr>
+        <tr><td data-i18n="field.password">Contraseña</td><td data-i18n="field.password.desc">Contraseña del usuario. Se guarda cifrada</td></tr>
+        <tr><td data-i18n="field.api_version">Versión de la API REST</td><td data-i18n="field.api_version.desc">Versión de la API, ej. <code>v10.13</code>; por defecto <code>v10.09</code></td></tr>
+        <tr><td data-i18n="field.verify_ssl">Verificar certificado SSL</td><td data-i18n="field.verify_ssl.desc">Desactívalo solo si el switch usa el certificado autofirmado de fábrica en una red de confianza</td></tr>
+        <tr><td data-i18n="field.connect_timeout">Timeout de conexión (segundos)</td><td data-i18n="field.connect_timeout.desc">Opcional; <code>15</code> segundos por defecto</td></tr>
+      </tbody>
+    </table>
+    <p data-i18n="ruvic.save">Guarda y pulsa <strong>Probar conexión</strong>: la plataforma valida las credenciales y el acceso.</p>
+    <div class="screenshot-placeholder" data-i18n="img.formulario.placeholder">[ Captura: formulario del conector Aruba CX en Settings → Conectores — reemplazar por assets/img/aruba_cx-form.png ]</div>
+  </section>
+
+  <section id="verificacion">
+    <h2 data-i18n="section.verificacion">Verificación</h2>
+    <ol class="ruvic-steps">
+      <li>
+        <strong data-i18n="verif.1.label">Test de conexión exitoso.</strong>
+        <p data-i18n="verif.1.body">El botón <em>Probar conexión</em> debe responder con éxito y la tarjeta debe quedar en estado <strong>Configurado</strong>.</p>
+      </li>
+      <li>
+        <strong data-i18n="verif.2.label">Prueba mínima con el agente.</strong>
+        <p data-i18n="verif.2.body">Abre una conversación nueva y pídele:</p>
+        <blockquote data-i18n="verif.2.prompt">"¿Qué puertos del switch están caídos?"</blockquote>
+        <p data-i18n="verif.2.result">El agente debe responder con la lista real de interfaces sin enlace.</p>
+      </li>
+    </ol>
+  </section>
+
+  <section id="solucion-problemas">
+    <h2 data-i18n="section.solucion_problemas">Solución de problemas</h2>
+    <table>
+      <thead><tr><th data-i18n="table.sintoma">Mensaje / síntoma</th><th data-i18n="table.causa">Causa probable y solución</th></tr></thead>
+      <tbody>
+        <tr><td data-i18n="trouble.1.symptom">"Usuario o contraseña inválidos" (401)</td><td data-i18n="trouble.1.fix">Revisa las credenciales del usuario local.</td></tr>
+        <tr><td data-i18n="trouble.2.symptom">"La versión de API … no existe"</td><td data-i18n="trouble.2.fix">Consulta https://&lt;switch&gt;/rest y usa una versión listada.</td></tr>
+        <tr><td data-i18n="trouble.3.symptom">"límite de sesiones REST"</td><td data-i18n="trouble.3.fix">Hay demasiadas sesiones abiertas para el usuario; expiran a los 20 minutos.</td></tr>
+        <tr><td data-i18n="trouble.4.symptom">"Error de certificado SSL"</td><td data-i18n="trouble.4.fix">El switch usa su certificado de fábrica. Instala uno válido o desactiva la verificación en una red de confianza.</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section id="faq-seguridad">
+    <h2 data-i18n="section.faq_seguridad">Preguntas frecuentes y notas de seguridad</h2>
+    <h3 data-i18n="faq.1.q">¿El agente puede apagar un puerto o cambiar una VLAN?</h3>
+    <p data-i18n="faq.1.a">No. El conector es de solo lectura y el usuario recomendado no tiene permisos de escritura.</p>
+
+    <h3 data-i18n="faq.2.q">¿Puedo consultar varios switches?</h3>
+    <p data-i18n="faq.2.a">Sí: crea una instancia del conector (alias) por switch.</p>
+
+    <h3 data-i18n="faq.3.q">¿Qué hago si la contraseña se filtra?</h3>
+    <p data-i18n="faq.3.a">Cámbiala en el switch y actualízala en el formulario.</p>
+
+  </section>
+
+</main>
+</div>
+
+<script>
+  const I18N = {
+  "es": {
+    "doc_title": "Conector Aruba CX — Guía de configuración | Ruvic",
+    "toc_title": "Contenido",
+    "toc.que_es": "¿Qué es y para qué sirve?",
+    "toc.prerrequisitos": "Prerrequisitos",
+    "toc.configuracion_fabricante": "Configuración en el fabricante",
+    "toc.permisos": "Permisos requeridos",
+    "toc.configuracion_ruvic": "Configuración en Ruvic",
+    "toc.verificacion": "Verificación",
+    "toc.solucion_problemas": "Solución de problemas",
+    "toc.faq_seguridad": "Preguntas frecuentes y notas de seguridad",
+    "guide_title": "Conector Aruba CX — Guía de configuración",
+    "guide_updated": "Última actualización: octubre 2026",
+    "section.que_es": "¿Qué es y para qué sirve?",
+    "que_es.body": "El conector Aruba CX permite que el agente de Ruvic consulte switches HPE Aruba CX: información general, interfaces, VLANs y el estado de un puerto. Es de solo lectura. Puedes pedirle cosas como:",
+    "que_es.example1": "\"¿Qué puertos del switch core están caídos?\"",
+    "que_es.example2": "\"¿En qué VLAN está el puerto 1/1/24 y tiene errores?\"",
+    "que_es.example3": "\"¿Qué versión de firmware tiene el switch?\"",
+    "que_es.ops_intro": "Operaciones soportadas:",
+    "table.operacion": "Operación",
+    "table.que_hace": "Qué hace",
+    "op.1": "Hostname, plataforma, firmware y número de serie",
+    "op.2": "Interfaces con estado administrativo, de enlace y velocidad",
+    "op.3": "VLANs configuradas",
+    "op.4": "Estado detallado y contadores de un puerto",
+    "callout.main.title": "Solo lectura",
+    "callout.main.body": "El conector no cambia la configuración del switch. Usa un usuario del grupo operators.",
+    "section.prerrequisitos": "Prerrequisitos",
+    "prereq.1": "Switch HPE Aruba CX con AOS-CX 10.04 o superior y la API REST habilitada.",
+    "prereq.2": "Acceso de administrador al switch para crear el usuario de solo lectura.",
+    "prereq.3": "Conectividad HTTPS desde la plataforma Ruvic hasta la IP de gestión del switch.",
+    "section.configuracion_fabricante": "Configuración en el fabricante",
+    "fabricante.intro": "Vas a crear un usuario de solo lectura y habilitar la API REST en modo lectura.",
+    "step.1.label": "Crea el usuario de solo lectura.",
+    "step.1.body": "En la CLI del switch: <code>user ruvic-api group operators password plaintext &lt;contraseña&gt;</code>.",
+    "step.2.label": "Habilita la API REST.",
+    "step.2.body": "Ejecuta <code>https-server rest access-mode read-only</code> y <code>https-server vrf mgmt</code> (o el VRF de tu red de gestión).",
+    "img.step2.placeholder": "[ Captura: configuración https-server en la CLI — reemplazar por assets/img/arubacx-rest.png ]",
+    "step.3.label": "Comprueba la versión de la API.",
+    "step.3.body": "Abre <code>https://&lt;switch&gt;/rest</code> en el navegador y anota la versión más reciente (ej. <code>v10.13</code>).",
+    "section.permisos": "Permisos requeridos",
+    "permisos.intro": "El grupo operators es suficiente: el conector solo lee.",
+    "table.permiso": "Permiso",
+    "table.para_que": "Para qué lo usa el conector",
+    "perm.1.desc": "Leer sistema, interfaces y VLANs",
+    "perm.2.desc": "Permitir la API REST sin escritura",
+    "section.configuracion_ruvic": "Configuración en Ruvic",
+    "ruvic.intro": "Entra a <strong>Settings → Conectores</strong>, busca la tarjeta <strong>Aruba CX</strong> y pulsa <strong>Configurar</strong>. Diligencia el formulario con los valores de la sección anterior:",
+    "table.campo": "Campo del formulario",
+    "table.valor": "Valor",
+    "field.host": "URL del switch",
+    "field.host.desc": "URL HTTPS de gestión del switch, ej. <code>https://10.0.0.10</code>",
+    "field.username": "Usuario",
+    "field.username.desc": "Usuario del grupo operators",
+    "field.password": "Contraseña",
+    "field.password.desc": "Contraseña del usuario. Se guarda cifrada",
+    "field.api_version": "Versión de la API REST",
+    "field.api_version.desc": "Versión de la API, ej. <code>v10.13</code>; por defecto <code>v10.09</code>",
+    "field.verify_ssl": "Verificar certificado SSL",
+    "field.verify_ssl.desc": "Desactívalo solo si el switch usa el certificado autofirmado de fábrica en una red de confianza",
+    "field.connect_timeout": "Timeout de conexión (segundos)",
+    "field.connect_timeout.desc": "Opcional; <code>15</code> segundos por defecto",
+    "ruvic.save": "Guarda y pulsa <strong>Probar conexión</strong>: la plataforma valida las credenciales y el acceso.",
+    "img.formulario.placeholder": "[ Captura: formulario del conector Aruba CX en Settings → Conectores — reemplazar por assets/img/aruba_cx-form.png ]",
+    "section.verificacion": "Verificación",
+    "verif.1.label": "Test de conexión exitoso.",
+    "verif.1.body": "El botón <em>Probar conexión</em> debe responder con éxito y la tarjeta debe quedar en estado <strong>Configurado</strong>.",
+    "verif.2.label": "Prueba mínima con el agente.",
+    "verif.2.body": "Abre una conversación nueva y pídele:",
+    "verif.2.prompt": "\"¿Qué puertos del switch están caídos?\"",
+    "verif.2.result": "El agente debe responder con la lista real de interfaces sin enlace.",
+    "section.solucion_problemas": "Solución de problemas",
+    "table.sintoma": "Mensaje / síntoma",
+    "table.causa": "Causa probable y solución",
+    "trouble.1.symptom": "\"Usuario o contraseña inválidos\" (401)",
+    "trouble.1.fix": "Revisa las credenciales del usuario local.",
+    "trouble.2.symptom": "\"La versión de API … no existe\"",
+    "trouble.2.fix": "Consulta https://&lt;switch&gt;/rest y usa una versión listada.",
+    "trouble.3.symptom": "\"límite de sesiones REST\"",
+    "trouble.3.fix": "Hay demasiadas sesiones abiertas para el usuario; expiran a los 20 minutos.",
+    "trouble.4.symptom": "\"Error de certificado SSL\"",
+    "trouble.4.fix": "El switch usa su certificado de fábrica. Instala uno válido o desactiva la verificación en una red de confianza.",
+    "section.faq_seguridad": "Preguntas frecuentes y notas de seguridad",
+    "faq.1.q": "¿El agente puede apagar un puerto o cambiar una VLAN?",
+    "faq.1.a": "No. El conector es de solo lectura y el usuario recomendado no tiene permisos de escritura.",
+    "faq.2.q": "¿Puedo consultar varios switches?",
+    "faq.2.a": "Sí: crea una instancia del conector (alias) por switch.",
+    "faq.3.q": "¿Qué hago si la contraseña se filtra?",
+    "faq.3.a": "Cámbiala en el switch y actualízala en el formulario.",
+  },
+  "en": {
+    "doc_title": "HPE Aruba CX Connector — Setup Guide | Ruvic",
+    "toc_title": "Contents",
+    "toc.que_es": "What is it and what is it for?",
+    "toc.prerrequisitos": "Prerequisites",
+    "toc.configuracion_fabricante": "Vendor-side setup",
+    "toc.permisos": "Required permissions",
+    "toc.configuracion_ruvic": "Setup in Ruvic",
+    "toc.verificacion": "Verification",
+    "toc.solucion_problemas": "Troubleshooting",
+    "toc.faq_seguridad": "FAQ and security notes",
+    "guide_title": "HPE Aruba CX Connector — Setup Guide",
+    "guide_updated": "Last updated: October 2026",
+    "section.que_es": "What is it and what is it for?",
+    "que_es.body": "The Aruba CX connector lets the Ruvic agent query HPE Aruba CX switches: general information, interfaces, VLANs and port status. It's read-only. You can ask things like:",
+    "que_es.example1": "\"Which ports on the core switch are down?\"",
+    "que_es.example2": "\"Which VLAN is port 1/1/24 on and does it have errors?\"",
+    "que_es.example3": "\"Which firmware version does the switch run?\"",
+    "que_es.ops_intro": "Supported operations:",
+    "table.operacion": "Operation",
+    "table.que_hace": "What it does",
+    "op.1": "Hostname, platform, firmware and serial number",
+    "op.2": "Interfaces with admin state, link state and speed",
+    "op.3": "Configured VLANs",
+    "op.4": "Detailed status and counters of a port",
+    "callout.main.title": "Read-only",
+    "callout.main.body": "The connector doesn't change the switch configuration. Use an operators-group user.",
+    "section.prerrequisitos": "Prerequisites",
+    "prereq.1": "HPE Aruba CX switch with AOS-CX 10.04 or later and the REST API enabled.",
+    "prereq.2": "Admin access to the switch to create the read-only user.",
+    "prereq.3": "HTTPS connectivity from the Ruvic platform to the switch management IP.",
+    "section.configuracion_fabricante": "Vendor-side setup",
+    "fabricante.intro": "You will create a read-only user and enable the REST API in read-only mode.",
+    "step.1.label": "Create the read-only user.",
+    "step.1.body": "In the switch CLI: <code>user ruvic-api group operators password plaintext &lt;password&gt;</code>.",
+    "step.2.label": "Enable the REST API.",
+    "step.2.body": "Run <code>https-server rest access-mode read-only</code> and <code>https-server vrf mgmt</code> (or your management VRF).",
+    "img.step2.placeholder": "[ Screenshot: https-server configuration in the CLI — replace with assets/img/arubacx-rest.png ]",
+    "step.3.label": "Check the API version.",
+    "step.3.body": "Open <code>https://&lt;switch&gt;/rest</code> in a browser and note the latest version (e.g. <code>v10.13</code>).",
+    "section.permisos": "Required permissions",
+    "permisos.intro": "The operators group is enough: the connector only reads.",
+    "table.permiso": "Permission",
+    "table.para_que": "What the connector uses it for",
+    "perm.1.desc": "Read system, interfaces and VLANs",
+    "perm.2.desc": "Allow the REST API without writes",
+    "section.configuracion_ruvic": "Setup in Ruvic",
+    "ruvic.intro": "Go to <strong>Settings → Connectors</strong>, find the <strong>HPE Aruba CX</strong> card and click <strong>Configure</strong>. Fill in the form with the values from the previous section:",
+    "table.campo": "Form field",
+    "table.valor": "Value",
+    "field.host": "Switch URL",
+    "field.host.desc": "Switch management HTTPS URL, e.g. <code>https://10.0.0.10</code>",
+    "field.username": "Username",
+    "field.username.desc": "Operators-group user",
+    "field.password": "Password",
+    "field.password.desc": "User password. Stored encrypted",
+    "field.api_version": "REST API version",
+    "field.api_version.desc": "API version, e.g. <code>v10.13</code>; default <code>v10.09</code>",
+    "field.verify_ssl": "Verify SSL certificate",
+    "field.verify_ssl.desc": "Turn off only if the switch uses its factory self-signed certificate on a trusted network",
+    "field.connect_timeout": "Connection timeout (seconds)",
+    "field.connect_timeout.desc": "Optional; <code>15</code> seconds by default",
+    "ruvic.save": "Save and click <strong>Test connection</strong>: the platform validates the credentials and access.",
+    "img.formulario.placeholder": "[ Screenshot: HPE Aruba CX connector form in Settings → Connectors — replace with assets/img/aruba_cx-form.png ]",
+    "section.verificacion": "Verification",
+    "verif.1.label": "Successful connection test.",
+    "verif.1.body": "The <em>Test connection</em> button must succeed and the card must show <strong>Configured</strong>.",
+    "verif.2.label": "Minimal test with the agent.",
+    "verif.2.body": "Open a new conversation and ask:",
+    "verif.2.prompt": "\"Which switch ports are down?\"",
+    "verif.2.result": "The agent should answer with the real list of interfaces without link.",
+    "section.solucion_problemas": "Troubleshooting",
+    "table.sintoma": "Message / symptom",
+    "table.causa": "Likely cause and fix",
+    "trouble.1.symptom": "\"Invalid username or password\" (401)",
+    "trouble.1.fix": "Check the local user's credentials.",
+    "trouble.2.symptom": "\"API version … doesn't exist\"",
+    "trouble.2.fix": "Check https://&lt;switch&gt;/rest and use a listed version.",
+    "trouble.3.symptom": "\"REST session limit\"",
+    "trouble.3.fix": "Too many open sessions for the user; they expire after 20 minutes.",
+    "trouble.4.symptom": "\"SSL certificate error\"",
+    "trouble.4.fix": "The switch uses its factory certificate. Install a valid one or disable verification on a trusted network.",
+    "section.faq_seguridad": "FAQ and security notes",
+    "faq.1.q": "Can the agent shut a port or change a VLAN?",
+    "faq.1.a": "No. The connector is read-only and the recommended user has no write permissions.",
+    "faq.2.q": "Can I query several switches?",
+    "faq.2.a": "Yes: create one connector instance (alias) per switch.",
+    "faq.3.q": "What if the password leaks?",
+    "faq.3.a": "Change it on the switch and update the form.",
+  },
+  };
+  /* El portal aplica el idioma del usuario (localStorage ruvic-docs-lang)
+     y actualiza [data-i18n], [data-i18n-placeholder] y [data-i18n-alt]. */
+</script>
+</body>
+</html>
